@@ -1,0 +1,11 @@
+node_modules/
+package-lock.json
+yarn.lock
+dist/
+build/
+out/
+*.js.map
+*.ts.map
+.env
+.vscode/
+npm-debug.log*
