@@ -28,12 +28,10 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   const handleSave = async () => {
     if (!localSettings) return;
-
     try {
       if (user) {
         await updateSettings(localSettings);
       } else {
-        // For non-logged in users, just update the local state
         updateSettings({
           ...localSettings,
           id: 'default',
@@ -46,7 +44,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
   };
 
-  // Show loading state while settings are being loaded
   if (!localSettings || !settings) {
     return (
       <Dialog open={isOpen} onClose={onClose} className="relative z-50">
@@ -65,29 +62,23 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   return (
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="mx-auto max-w-lg rounded-xl bg-white p-6 w-full">
           <Dialog.Title className="text-xl font-bold mb-6">
             Settings
           </Dialog.Title>
-
           <div className="space-y-6">
-            {/* Global Theme */}
             <div>
               <h3 className="font-semibold mb-3">Theme</h3>
               <div className="grid grid-cols-3 gap-3">
                 {themes.map((theme) => (
                   <button
                     key={theme.id}
-                    className={`
-                      p-2 rounded border transition-colors
-                      ${
-                        localSettings.globalTheme === theme.id
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }
-                    `}
+                    className={`p-2 rounded border transition-colors ${
+                      localSettings.globalTheme === theme.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
                     onClick={() =>
                       setLocalSettings({
                         ...localSettings,
@@ -100,8 +91,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 ))}
               </div>
             </div>
-
-            {/* Timer Colors */}
             <div>
               <h3 className="font-semibold mb-3">Timer Colors</h3>
               <div className="space-y-3">
@@ -149,8 +138,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 </div>
               </div>
             </div>
-
-            {/* Timer Duration */}
             <div>
               <h3 className="font-semibold mb-3">Timer (minutes)</h3>
               <div className="grid grid-cols-3 gap-4">
@@ -160,7 +147,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     type="number"
                     min="1"
                     max="60"
-                    value={localSettings.times.pomodoro / 60}
+                    step="1"
+                    value={localSettings.times.pomodoro}
                     onChange={(e) => {
                       const value = Math.max(
                         1,
@@ -170,7 +158,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         ...localSettings,
                         times: {
                           ...localSettings.times,
-                          pomodoro: value * 60,
+                          pomodoro: value,
                         },
                       });
                     }}
@@ -183,7 +171,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     type="number"
                     min="1"
                     max="60"
-                    value={localSettings.times.shortBreak / 60}
+                    step="1"
+                    value={localSettings.times.shortBreak}
                     onChange={(e) => {
                       const value = Math.max(
                         1,
@@ -193,7 +182,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         ...localSettings,
                         times: {
                           ...localSettings.times,
-                          shortBreak: value * 60,
+                          shortBreak: value,
                         },
                       });
                     }}
@@ -206,7 +195,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     type="number"
                     min="1"
                     max="60"
-                    value={localSettings.times.longBreak / 60}
+                    step="1"
+                    value={localSettings.times.longBreak}
                     onChange={(e) => {
                       const value = Math.max(
                         1,
@@ -216,7 +206,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         ...localSettings,
                         times: {
                           ...localSettings.times,
-                          longBreak: value * 60,
+                          longBreak: value,
                         },
                       });
                     }}
@@ -226,7 +216,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </div>
             </div>
           </div>
-
           <div className="mt-6 flex justify-end gap-3">
             <button
               onClick={onClose}

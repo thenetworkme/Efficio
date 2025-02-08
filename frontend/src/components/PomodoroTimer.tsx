@@ -22,34 +22,31 @@ export default function PomodoroTimer({
 }: PomodoroTimerProps) {
   const [timeLeft, setTimeLeft] = useState(() => {
     return (
-      settings?.times?.[currentMode] ??
-      (currentMode === 'pomodoro'
-        ? 25 * 60
-        : currentMode === 'shortBreak'
-        ? 5 * 60
-        : 15 * 60)
+      (settings?.times?.[currentMode] ??
+        (currentMode === 'pomodoro'
+          ? 25
+          : currentMode === 'shortBreak'
+          ? 5
+          : 15)) * 60
     );
   });
   const [isRunning, setIsRunning] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState('');
 
-  // Update timer when settings change
   useEffect(() => {
     if (settings?.times?.[currentMode]) {
-      setTimeLeft(settings.times[currentMode]);
+      setTimeLeft(settings.times[currentMode] * 60);
       setIsRunning(false);
     }
   }, [settings, currentMode]);
 
-  // Timer logic
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
     if (isRunning && timeLeft > 0) {
       intervalId = setInterval(() => {
         setTimeLeft((time) => {
           if (time <= 1 && currentMode === 'pomodoro') {
-            // Complete first uncompleted task when timer ends
             setTasks((currentTasks) => {
               const firstUncompleted = currentTasks.findIndex(
                 (task) => !task.completed
@@ -75,12 +72,12 @@ export default function PomodoroTimer({
   const toggleTimer = () => {
     if (timeLeft === 0) {
       setTimeLeft(
-        settings?.times?.[currentMode] ??
+        (settings?.times?.[currentMode] ??
           (currentMode === 'pomodoro'
-            ? 25 * 60
+            ? 25
             : currentMode === 'shortBreak'
-            ? 5 * 60
-            : 15 * 60)
+            ? 5
+            : 15)) * 60
       );
     }
     setIsRunning(!isRunning);
@@ -116,7 +113,6 @@ export default function PomodoroTimer({
   return (
     <div className="flex flex-col space-y-4">
       <div className="bg-white/10 rounded-lg p-6">
-        {/* Timer Controls */}
         <div className="flex justify-center gap-3 mb-8">
           {(['pomodoro', 'shortBreak', 'longBreak'] as const).map(
             (timerMode) => (
@@ -125,23 +121,20 @@ export default function PomodoroTimer({
                 onClick={() => {
                   onModeChange(timerMode);
                   setTimeLeft(
-                    settings?.times?.[timerMode] ??
+                    (settings?.times?.[timerMode] ??
                       (timerMode === 'pomodoro'
-                        ? 25 * 60
+                        ? 25
                         : timerMode === 'shortBreak'
-                        ? 5 * 60
-                        : 15 * 60)
+                        ? 5
+                        : 15)) * 60
                   );
                   setIsRunning(false);
                 }}
-                className={`
-                px-3 py-2 rounded font-bold text-white transition-colors
-                ${
+                className={`px-3 py-2 rounded font-bold text-white transition-colors ${
                   currentMode === timerMode
                     ? 'bg-white/20'
                     : 'hover:bg-white/10'
-                }
-              `}
+                }`}
               >
                 {timerMode === 'pomodoro'
                   ? 'Pomodoro'
@@ -152,19 +145,13 @@ export default function PomodoroTimer({
             )
           )}
         </div>
-
-        {/* Timer Display */}
         <div className="text-center">
           <div className="text-[120px] font-bold text-white mb-8 leading-none">
             {formatTime(timeLeft)}
           </div>
           <button
             onClick={toggleTimer}
-            className="
-              min-w-[200px] bg-white px-12 py-3 rounded-lg
-              text-2xl font-bold tracking-[0.25em] uppercase
-              hover:bg-white/90 transition-all
-            "
+            className="min-w-[200px] bg-white px-12 py-3 rounded-lg text-2xl font-bold tracking-[0.25em] uppercase hover:bg-white/90 transition-all"
             style={{
               color:
                 currentMode === 'pomodoro'
@@ -178,8 +165,6 @@ export default function PomodoroTimer({
           </button>
         </div>
       </div>
-
-      {/* Tasks Section */}
       <div className="bg-white/10 rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-white">Tasks</h2>
@@ -194,7 +179,6 @@ export default function PomodoroTimer({
             </svg>
           </button>
         </div>
-
         <div className="space-y-2 mb-4">
           {tasks.map((task) => (
             <div
@@ -243,7 +227,6 @@ export default function PomodoroTimer({
             </div>
           ))}
         </div>
-
         <form onSubmit={handleAddTask}>
           <input
             type="text"
@@ -253,7 +236,6 @@ export default function PomodoroTimer({
             className="w-full bg-white/10 text-white placeholder-white/60 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/20"
           />
         </form>
-
         {tasks.length === 0 && (
           <div className="mt-8 text-center text-white/60">Time to focus!</div>
         )}
