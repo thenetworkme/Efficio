@@ -29,7 +29,7 @@ const defaultSettings: Settings = {
   user_id: '',
   globalTheme: 'dark',
   pomodoroColor: '#ef4444',
-  shortBreakColor: '#22c55e',
+  shortBreakColor: '#0B7A75',
   longBreakColor: '#3b82f6',
   times: {
     pomodoro: 25,

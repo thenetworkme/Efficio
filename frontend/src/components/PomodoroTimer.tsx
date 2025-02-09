@@ -99,7 +99,6 @@ export default function PomodoroTimer({
       );
     }
     setIsRunning(!isRunning);
-
     if (!isRunning) {
       playSound('/sounds/click.mp3', 0.1); // Sonido al iniciar
     } else {
@@ -175,7 +174,7 @@ export default function PomodoroTimer({
           </div>
           <button
             onClick={toggleTimer}
-            className="min-w-[200px] bg-white px-12 py-3 rounded-lg text-2xl font-bold tracking-[0.25em] uppercase hover:bg-white/90 transition-all"
+            className="min-w-[200px] bg-white px-12 py-3 rounded-lg text-2xl font-bold tracking-[0.25em] uppercase transition-all duration-200"
             style={{
               color:
                 currentMode === 'pomodoro'
@@ -183,6 +182,8 @@ export default function PomodoroTimer({
                   : currentMode === 'shortBreak'
                   ? '#38858a'
                   : '#397097',
+              boxShadow: isRunning ? 'none' : '0px 4px 0px  #D3BCCC', // Sombra sólida gris
+              transform: isRunning ? 'translateY(6px)' : 'translateY(0px)', // Movimiento hacia abajo
             }}
           >
             {isRunning ? 'PAUSE' : timeLeft === 0 ? 'RESTART' : 'START'}
