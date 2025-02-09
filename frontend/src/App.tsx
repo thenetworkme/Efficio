@@ -54,7 +54,7 @@ function AppContent() {
         }}
       >
         <div className="max-w-[620px] mx-auto px-5 py-3 flex justify-between items-center">
-          <div className="text-white font-bold text-2xl">Pomofocus</div>
+          <div className="text-white font-bold text-2xl">Efficio</div>
           <div className="flex items-center gap-2">
             {user && (
               <button className="text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded text-sm transition-colors">
@@ -80,12 +80,13 @@ function AppContent() {
                 Logout
               </button>
             ) : (
-              <button
-                onClick={() => setIsLoginOpen(true)}
-                className="text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded text-sm transition-colors"
-              >
-                Login
-              </button>
+              // <button
+              //   onClick={() => setIsLoginOpen(true)}
+              //   className="text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded text-sm transition-colors"
+              // >
+              //   Login
+              // </button>
+              <></>
             )}
           </div>
         </div>

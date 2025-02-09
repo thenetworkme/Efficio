@@ -34,6 +34,21 @@ export default function PomodoroTimer({
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState('');
 
+  // Reproducir sonido
+  const playSound = (
+    soundPath: string,
+    volume: number = 1,
+    duration: number = 10
+  ) => {
+    const audio = new Audio(soundPath);
+    audio.volume = volume;
+    audio.play().catch((error) => console.error('Error playing sound:', error));
+    setTimeout(() => {
+      audio.pause();
+      audio.currentTime = 0;
+    }, duration * 1000);
+  };
+
   useEffect(() => {
     if (settings?.times?.[currentMode]) {
       setTimeLeft(settings.times[currentMode] * 60);
@@ -46,21 +61,24 @@ export default function PomodoroTimer({
     if (isRunning && timeLeft > 0) {
       intervalId = setInterval(() => {
         setTimeLeft((time) => {
-          if (time <= 1 && currentMode === 'pomodoro') {
-            setTasks((currentTasks) => {
-              const firstUncompleted = currentTasks.findIndex(
-                (task) => !task.completed
-              );
-              if (firstUncompleted !== -1) {
-                return currentTasks.map((task, index) =>
-                  index === firstUncompleted
-                    ? { ...task, completed: true }
-                    : task
+          if (time <= 1) {
+            if (currentMode === 'pomodoro') {
+              setTasks((currentTasks) => {
+                const firstUncompleted = currentTasks.findIndex(
+                  (task) => !task.completed
                 );
-              }
-              return currentTasks;
-            });
+                if (firstUncompleted !== -1) {
+                  return currentTasks.map((task, index) =>
+                    index === firstUncompleted
+                      ? { ...task, completed: true }
+                      : task
+                  );
+                }
+                return currentTasks;
+              });
+            }
             setIsRunning(false);
+            playSound('/sounds/pomodoro.mp3', 0.5); // Sonido al finalizar el temporizador
           }
           return time - 1;
         });
@@ -81,6 +99,12 @@ export default function PomodoroTimer({
       );
     }
     setIsRunning(!isRunning);
+
+    if (!isRunning) {
+      playSound('/sounds/click.mp3', 0.1); // Sonido al iniciar
+    } else {
+      playSound('/sounds/click.mp3', 0.1); // Sonido al pausar
+    }
   };
 
   const handleAddTask = (e: React.FormEvent) => {
