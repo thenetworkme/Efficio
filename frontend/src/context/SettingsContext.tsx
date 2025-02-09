@@ -9,6 +9,8 @@ interface Times {
 }
 
 export interface Settings {
+  id: string;
+  user_id: string;
   globalTheme: string;
   pomodoroColor: string;
   shortBreakColor: string;
@@ -23,6 +25,8 @@ interface SettingsContextType {
 }
 
 const defaultSettings: Settings = {
+  id: '',
+  user_id: '',
   globalTheme: 'dark',
   pomodoroColor: '#ef4444',
   shortBreakColor: '#22c55e',
@@ -58,6 +62,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
       // Transform the data from snake_case to camelCase
       setSettings({
+        id: data.id,
+        user_id: '',
         globalTheme: data.global_theme,
         pomodoroColor: data.pomodoro_color,
         shortBreakColor: data.short_break_color,
