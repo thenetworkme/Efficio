@@ -9,4 +9,4 @@ out/
 .env
 .vscode/
 npm-debug.log*
-/backend/
+/backend/src/
