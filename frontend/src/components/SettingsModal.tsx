@@ -3,24 +3,24 @@ import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useState } from 'react';
 import type { Settings } from '../context/SettingsContext';
-import {
-  Dialog as diag,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from './ui/dialog';
-import { Label } from './ui/label';
-import { Input } from './ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui/select';
-import { Switch } from './ui/switch';
-import { Slider } from './ui/slider';
-import { Music, Volume2 } from 'lucide-react';
+// import {
+//   Dialog as diag,
+//   DialogContent,
+//   DialogHeader,
+//   DialogTitle,
+// } from './ui/dialog';
+// import { Label } from './ui/label';
+// import { Input } from './ui/input';
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from './ui/select';
+// import { Switch } from './ui/switch';
+// import { Slider } from './ui/slider';
+// import { Music, Volume2 } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
