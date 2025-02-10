@@ -6,13 +6,18 @@ import { AuthProvider } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
 import { useAuth } from './context/AuthContext';
 import { useSettings } from './context/SettingsContext';
+import Music from './components/Music';
 
 export interface Task {
   id: string;
   text: string;
   completed: boolean;
 }
-
+const songs = [
+  '/sounds/song1.mp3', // Agrega tus canciones aquí
+  '/sounds/song2.mp3',
+  '/sounds/song3.mp3',
+];
 function AppContent() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -98,6 +103,7 @@ function AppContent() {
           currentMode={currentMode}
           onModeChange={setCurrentMode}
         />
+        {/* <Music /> */}
       </main>
 
       <SettingsModal
