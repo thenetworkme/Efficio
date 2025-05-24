@@ -15,12 +15,14 @@ interface PomodoroTimerProps {
   };
   currentMode: TimerMode;
   onModeChange: (mode: TimerMode) => void;
+  onTimeUpdate?: (timeLeft: number, totalTime: number) => void;
 }
 
 export default function PomodoroTimer({
   settings,
   currentMode,
   onModeChange,
+  onTimeUpdate,
 }: PomodoroTimerProps) {
   const [timeLeft, setTimeLeft] = useState(() => {
     return (
@@ -33,7 +35,11 @@ export default function PomodoroTimer({
     );
   });
   const [isRunning, setIsRunning] = useState(false);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    // Cargar tareas desde localStorage al iniciar
+    const savedTasks = localStorage.getItem('efficio-tasks');
+    return savedTasks ? JSON.parse(savedTasks) : [];
+  });
   const [newTask, setNewTask] = useState('');
   const [autoDeleteCompleted, setAutoDeleteCompleted] = useState(false);
   const { updateSettings, settings: fullSettings } = useSettings();
@@ -219,6 +225,28 @@ export default function PomodoroTimer({
     }
   }, [fullSettings]);
 
+  // Guardar tareas en localStorage cuando cambien
+  useEffect(() => {
+    localStorage.setItem('efficio-tasks', JSON.stringify(tasks));
+  }, [tasks]);
+
+  // Notificar al componente padre sobre cambios en el tiempo
+  useEffect(() => {
+    // Calcular el tiempo total en segundos
+    const totalTime =
+      (settings?.times?.[currentMode] ??
+        (currentMode === 'pomodoro'
+          ? 25
+          : currentMode === 'shortBreak'
+          ? 5
+          : 15)) * 60;
+
+    // Llamar a la función de actualización si está definida
+    if (onTimeUpdate) {
+      onTimeUpdate(timeLeft, totalTime);
+    }
+  }, [timeLeft, currentMode, settings, onTimeUpdate]);
+
   return (
     <div className="flex flex-col space-y-4">
       <style jsx global>{`
@@ -229,12 +257,7 @@ export default function PomodoroTimer({
           transition: all 0.5s ease-in-out;
         }
       `}</style>
-      <div className="w-full bg-gray-700 rounded-full h-[0.5px] mb-4">
-        <div
-          className="h-full bg-white rounded-full transition-all duration-200"
-          style={{ width: `${progressPercentage}%` }}
-        ></div>
-      </div>
+      {/* Barra de progreso movida al header */}
       <div className="bg-white/10 rounded-lg p-6">
         <div className="flex justify-center gap-3 mb-8">
           {(['pomodoro', 'shortBreak', 'longBreak'] as const).map(
@@ -262,8 +285,8 @@ export default function PomodoroTimer({
                 {timerMode === 'pomodoro'
                   ? 'Pomodoro'
                   : timerMode === 'shortBreak'
-                  ? 'Short Break'
-                  : 'Long Break'}
+                  ? 'Descanso Corto'
+                  : 'Descanso Largo'}
               </button>
             )
           )}
@@ -288,14 +311,14 @@ export default function PomodoroTimer({
               transform: isRunning ? 'translateY(6px)' : 'translateY(0px)', // Movimiento hacia abajo
             }}
           >
-            {isRunning ? 'PAUSE' : timeLeft === 0 ? 'RESTART' : 'START'}
+            {isRunning ? 'PAUSA' : timeLeft === 0 ? 'REINICIAR' : 'INICIAR'}
           </button>
         </div>
       </div>
       <div className="bg-white/10 rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-white">
-            Tasks{' '}
+            Tareas{' '}
             <span className="text-sm font-normal ml-2">
               {tasks.filter((t) => t.completed).length}/{tasks.length}
             </span>
@@ -374,12 +397,14 @@ export default function PomodoroTimer({
             type="text"
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
-            placeholder="What are you working on?"
+            placeholder="¿En qué estás trabajando?"
             className="w-full bg-white/10 text-white placeholder-white/60 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/20"
           />
         </form>
         {tasks.length === 0 && (
-          <div className="mt-8 text-center text-white/60">Time to focus!</div>
+          <div className="mt-8 text-center text-white/60">
+            ¡Hora de concentrarse!
+          </div>
         )}
       </div>
     </div>

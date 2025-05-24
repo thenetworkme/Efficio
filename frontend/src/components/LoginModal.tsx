@@ -28,10 +28,13 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="mx-auto max-w-sm rounded-xl bg-white p-6 w-full">
-          <Dialog.Title className="text-xl font-bold mb-6">Login</Dialog.Title>
+          <Dialog.Title className="text-xl font-bold mb-6">
+            Iniciar sesión
+          </Dialog.Title>
 
           <p className="text-gray-600 mb-6">
-            Sign in to sync your settings across devices and save your progress.
+            Inicia sesión para sincronizar tus ajustes entre dispositivos y
+            guardar tu progreso.
           </p>
 
           {error && (

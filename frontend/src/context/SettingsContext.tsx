@@ -21,8 +21,9 @@ export interface Settings {
   shortBreakColor: string;
   longBreakColor: string;
   times: Times;
-  sessions: Session[]; // Agregamos un campo para almacenar las sesiones
-  autoDeleteCompletedTasks?: boolean;
+  sessions: Session[];
+  autoStartBreaks?: boolean;
+  autoDeleteCompletedTasks: boolean;
 }
 
 interface SettingsContextType {
@@ -35,6 +36,7 @@ const defaultSettings: Settings = {
   id: '',
   user_id: '',
   globalTheme: 'dark',
+  autoStartBreaks: false,
   pomodoroColor: '#ef4444',
   shortBreakColor: '#0B7A75',
   longBreakColor: '#3b82f6',
@@ -43,7 +45,8 @@ const defaultSettings: Settings = {
     shortBreak: 5,
     longBreak: 15,
   },
-  sessions: [], // Inicializamos con un array vacío
+  sessions: [],
+  autoDeleteCompletedTasks: false,
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(
@@ -75,7 +78,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         shortBreakColor: data.short_break_color,
         longBreakColor: data.long_break_color,
         times: data.times,
-        sessions: data.sessions || [], // Asegúrate de cargar las sesiones desde la API
+        sessions: data.sessions || [],
+        autoStartBreaks: data.auto_start_breaks || false,
+        autoDeleteCompletedTasks: data.auto_delete_completed_tasks || false,
       });
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -95,7 +100,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           newSettings.shortBreakColor || settings.shortBreakColor,
         long_break_color: newSettings.longBreakColor || settings.longBreakColor,
         times: newSettings.times || settings.times,
-        sessions: newSettings.sessions || settings.sessions, // Actualizamos las sesiones
+        sessions: newSettings.sessions || settings.sessions,
+        auto_start_breaks:
+          newSettings.autoStartBreaks !== undefined
+            ? newSettings.autoStartBreaks
+            : settings.autoStartBreaks,
+        auto_delete_completed_tasks:
+          newSettings.autoDeleteCompletedTasks !== undefined
+            ? newSettings.autoDeleteCompletedTasks
+            : settings.autoDeleteCompletedTasks,
       };
       if (user) {
         await api.updateSettings(updatedSettings);
