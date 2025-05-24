@@ -16,6 +16,7 @@ export interface Settings {
   shortBreakColor: string;
   longBreakColor: string;
   times: Times;
+  autoStartBreaks?: boolean;
 }
 
 interface SettingsContextType {
@@ -28,6 +29,7 @@ const defaultSettings: Settings = {
   id: '',
   user_id: '',
   globalTheme: 'dark',
+  autoStartBreaks: false,
   pomodoroColor: '#ef4444',
   shortBreakColor: '#0B7A75',
   longBreakColor: '#3b82f6',
@@ -69,6 +71,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         shortBreakColor: data.short_break_color,
         longBreakColor: data.long_break_color,
         times: data.times,
+        autoStartBreaks: data.auto_start_breaks || false,
       });
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -90,6 +93,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           newSettings.shortBreakColor || settings.shortBreakColor,
         long_break_color: newSettings.longBreakColor || settings.longBreakColor,
         times: newSettings.times || settings.times,
+        auto_start_breaks: newSettings.autoStartBreaks !== undefined ? newSettings.autoStartBreaks : settings.autoStartBreaks,
       };
 
       if (user) {
