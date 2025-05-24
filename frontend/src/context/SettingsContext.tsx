@@ -8,6 +8,11 @@ interface Times {
   longBreak: number;
 }
 
+export interface Session {
+  date: string; // Fecha en formato ISO (YYYY-MM-DD)
+  count: number; // Número de sesiones completadas ese día
+}
+
 export interface Settings {
   id: string;
   user_id: string;
@@ -16,6 +21,8 @@ export interface Settings {
   shortBreakColor: string;
   longBreakColor: string;
   times: Times;
+  sessions: Session[]; // Agregamos un campo para almacenar las sesiones
+  autoDeleteCompletedTasks?: boolean;
 }
 
 interface SettingsContextType {
@@ -36,6 +43,7 @@ const defaultSettings: Settings = {
     shortBreak: 5,
     longBreak: 15,
   },
+  sessions: [], // Inicializamos con un array vacío
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(
@@ -59,8 +67,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const loadSettings = async () => {
     try {
       const data = await api.getSettings();
-
-      // Transform the data from snake_case to camelCase
       setSettings({
         id: data.id,
         user_id: '',
@@ -69,6 +75,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         shortBreakColor: data.short_break_color,
         longBreakColor: data.long_break_color,
         times: data.times,
+        sessions: data.sessions || [], // Asegúrate de cargar las sesiones desde la API
       });
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -81,8 +88,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const updateSettings = async (newSettings: Partial<Settings>) => {
     try {
       setLoading(true);
-
-      // Transform the settings from camelCase to snake_case
       const updatedSettings = {
         global_theme: newSettings.globalTheme || settings.globalTheme,
         pomodoro_color: newSettings.pomodoroColor || settings.pomodoroColor,
@@ -90,12 +95,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           newSettings.shortBreakColor || settings.shortBreakColor,
         long_break_color: newSettings.longBreakColor || settings.longBreakColor,
         times: newSettings.times || settings.times,
+        sessions: newSettings.sessions || settings.sessions, // Actualizamos las sesiones
       };
-
       if (user) {
         await api.updateSettings(updatedSettings);
       }
-
       setSettings((prev) => ({ ...prev, ...newSettings }));
     } catch (error) {
       console.error('Error updating settings:', error);

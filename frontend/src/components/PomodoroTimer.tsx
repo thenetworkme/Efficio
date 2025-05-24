@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useSettings } from '../context/SettingsContext';
 import { Task } from '../App';
+import { Trash2 } from 'lucide-react';
 
 type TimerMode = 'pomodoro' | 'shortBreak' | 'longBreak';
 
@@ -33,6 +35,9 @@ export default function PomodoroTimer({
   const [isRunning, setIsRunning] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState('');
+  const [autoDeleteCompleted, setAutoDeleteCompleted] = useState(false);
+  const { updateSettings, settings: fullSettings } = useSettings();
+  const taskRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   // Reproducir sonido
   const playSound = (
@@ -76,6 +81,32 @@ export default function PomodoroTimer({
                 }
                 return currentTasks;
               });
+
+              // Registrar la sesión completada
+              const today = new Date().toISOString().split('T')[0];
+              updateSettings((prevSettings) => {
+                const existingSession = prevSettings.sessions.find(
+                  (session) => session.date === today
+                );
+                if (existingSession) {
+                  return {
+                    ...prevSettings,
+                    sessions: prevSettings.sessions.map((session) =>
+                      session.date === today
+                        ? { ...session, count: session.count + 1 }
+                        : session
+                    ),
+                  };
+                } else {
+                  return {
+                    ...prevSettings,
+                    sessions: [
+                      ...prevSettings.sessions,
+                      { date: today, count: 1 },
+                    ],
+                  };
+                }
+              });
             }
             setIsRunning(false);
             playSound('/sounds/pomodoro.mp3', 0.5); // Sonido al finalizar el temporizador
@@ -118,11 +149,49 @@ export default function PomodoroTimer({
   };
 
   const toggleTaskCompletion = (taskId: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
-    );
+    const taskElement = taskRefs.current[taskId];
+
+    setTasks((prevTasks) => {
+      const updatedTasks = prevTasks.map((task) => {
+        if (task.id === taskId) {
+          const newCompleted = !task.completed;
+
+          // Si la tarea se marca como completada y autoDeleteCompleted está activado
+          if (
+            newCompleted &&
+            autoDeleteCompleted &&
+            fullSettings?.autoDeleteCompletedTasks
+          ) {
+            return null; // Marcar para eliminación
+          }
+
+          // Aplicar animación si se completa
+          if (newCompleted && taskElement) {
+            taskElement.classList.add('task-completed-animation');
+            setTimeout(() => {
+              if (
+                autoDeleteCompleted &&
+                fullSettings?.autoDeleteCompletedTasks
+              ) {
+                // La tarea ya se eliminará
+              } else {
+                taskElement.classList.remove('task-completed-animation');
+              }
+            }, 800);
+          }
+
+          return { ...task, completed: newCompleted };
+        }
+        return task;
+      });
+
+      // Filtrar las tareas marcadas para eliminación
+      return updatedTasks.filter(Boolean) as Task[];
+    });
+  };
+
+  const deleteTask = (taskId: string) => {
+    setTasks(tasks.filter((task) => task.id !== taskId));
   };
 
   const formatTime = (seconds: number): string => {
@@ -133,8 +202,39 @@ export default function PomodoroTimer({
       .padStart(2, '0')}`;
   };
 
+  // Calcular el porcentaje de tiempo transcurrido
+  const totalTime =
+    (settings?.times?.[currentMode] ??
+      (currentMode === 'pomodoro'
+        ? 25
+        : currentMode === 'shortBreak'
+        ? 5
+        : 15)) * 60;
+  const progressPercentage = ((totalTime - timeLeft) / totalTime) * 100;
+
+  // Efecto para sincronizar autoDeleteCompleted con la configuración
+  useEffect(() => {
+    if (fullSettings?.autoDeleteCompletedTasks !== undefined) {
+      setAutoDeleteCompleted(fullSettings.autoDeleteCompletedTasks);
+    }
+  }, [fullSettings]);
+
   return (
     <div className="flex flex-col space-y-4">
+      <style jsx global>{`
+        .task-completed-animation {
+          transform: scale(0.95);
+          opacity: 0.7;
+          background-color: rgba(255, 255, 255, 0.2);
+          transition: all 0.5s ease-in-out;
+        }
+      `}</style>
+      <div className="w-full bg-gray-700 rounded-full h-[0.5px] mb-4">
+        <div
+          className="h-full bg-white rounded-full transition-all duration-200"
+          style={{ width: `${progressPercentage}%` }}
+        ></div>
+      </div>
       <div className="bg-white/10 rounded-lg p-6">
         <div className="flex justify-center gap-3 mb-8">
           {(['pomodoro', 'shortBreak', 'longBreak'] as const).map(
@@ -169,6 +269,8 @@ export default function PomodoroTimer({
           )}
         </div>
         <div className="text-center">
+          {/* Barra de progreso */}
+          {/* Temporizador */}
           <div className="text-[120px] font-bold text-white mb-8 leading-none">
             {formatTime(timeLeft)}
           </div>
@@ -192,7 +294,12 @@ export default function PomodoroTimer({
       </div>
       <div className="bg-white/10 rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-white">Tasks</h2>
+          <h2 className="text-xl font-bold text-white">
+            Tasks{' '}
+            <span className="text-sm font-normal ml-2">
+              {tasks.filter((t) => t.completed).length}/{tasks.length}
+            </span>
+          </h2>
           <button className="p-2 text-white hover:bg-white/10 rounded transition-colors">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -208,7 +315,8 @@ export default function PomodoroTimer({
           {tasks.map((task) => (
             <div
               key={task.id}
-              className="flex items-center justify-between gap-3 bg-white/10 p-4 rounded-lg group"
+              ref={(el) => (taskRefs.current[task.id] = el)}
+              className="flex items-center justify-between gap-3 bg-white/10 p-4 rounded-lg group transition-all duration-300"
             >
               <span
                 className={`flex-1 text-white ${
@@ -217,38 +325,47 @@ export default function PomodoroTimer({
               >
                 {task.text}
               </span>
-              <button
-                onClick={() => toggleTaskCompletion(task.id)}
-                className="text-white/80 hover:text-white"
-              >
-                {task.completed ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                )}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => deleteTask(task.id)}
+                  className="text-white/60 hover:text-white/90 transition-colors"
+                  title="Delete task"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => toggleTaskCompletion(task.id)}
+                  className="text-white/80 hover:text-white transition-colors"
+                >
+                  {task.completed ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
           ))}
         </div>

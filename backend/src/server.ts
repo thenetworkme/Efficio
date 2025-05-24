@@ -1,10 +1,10 @@
 import app from './app';
-import dotenv from 'dotenv';
+import connectDB from './lib/mongoose';
 
-dotenv.config();
+const PORT = process.env.PORT || 3000;
 
-const port = process.env.PORT || 3000;
-
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
 });

@@ -1,41 +1,30 @@
 import express from 'express';
 import passport from 'passport';
+import { isAuthenticated } from '../middleware/auth';
 
 const router = express.Router();
 
 // GitHub OAuth routes
-router.get(
-  '/github',
-  passport.authenticate('github', { scope: ['user:email'] })
-);
+router.get('/github', passport.authenticate('github', { scope: ['user:email'] }));
 
 router.get(
   '/github/callback',
-  passport.authenticate('github', {
-    failureRedirect: `${process.env.CLIENT_URL}/login?error=true`,
-  }),
+  passport.authenticate('github', { failureRedirect: '/login' }),
   (req, res) => {
-    res.redirect(process.env.CLIENT_URL || 'http://localhost:5173');
+    res.redirect(process.env.FRONTEND_URL || 'http://localhost:5173');
   }
 );
 
 // Get current user
-router.get('/user', (req, res) => {
-  if (req.isAuthenticated()) {
-    res.json(req.user);
-  } else {
-    res.status(401).json({ error: 'Not authenticated' });
-  }
+router.get('/me', isAuthenticated, (req, res) => {
+  res.json(req.user);
 });
 
-// Logout route
+// Logout
 router.post('/logout', (req, res) => {
-  req.logout((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Error logging out' });
-    }
+  req.logout(() => {
     res.json({ message: 'Logged out successfully' });
   });
 });
 
-export default router;
+export default router; 
