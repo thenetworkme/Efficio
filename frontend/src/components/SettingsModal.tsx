@@ -3,7 +3,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from './ui/dialog';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
@@ -24,6 +23,7 @@ import {
   Settings as SettingsIcon,
   Trash2,
   X,
+  Clock,
 } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../context/AuthContext';
@@ -46,29 +46,23 @@ const themes = [
 ];
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const { settings, updateSettings } = useSettings();
+  const { settings, updateSettings, loading: settingsLoading } = useSettings();
   const { user } = useAuth();
-  const [localSettings, setLocalSettings] = useState<Settings | null>(null);
-  // Using sonner toast instead of Chakra UI
+  const [localSettings, setLocalSettings] = useState<Settings>(settings);
+  const [editingColor, setEditingColor] = useState<string | null>(null);
 
   useEffect(() => {
-    if (settings) {
-      setLocalSettings(settings);
-    }
+    setLocalSettings(settings);
   }, [settings]);
+
+
 
   const handleSave = async () => {
     if (!localSettings) return;
     try {
-      if (user) {
-        await updateSettings(localSettings);
-      } else {
-        updateSettings({
-          ...localSettings,
-          id: 'default',
-          user_id: 'default',
-        });
-      }
+      await updateSettings(localSettings);
+      // Guardar en localStorage para usuarios no autenticados o autenticados
+      localStorage.setItem('userSettings', JSON.stringify(localSettings));
       toast.success('Configuración guardada', {
         description: 'Tus preferencias han sido actualizadas correctamente.',
         duration: 3000,
@@ -83,7 +77,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
   };
 
-  if (!localSettings || !settings) {
+  if (settingsLoading || !localSettings) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="bg-transparent border-none shadow-none">
@@ -97,251 +91,156 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-white/95 backdrop-blur-md border border-gray-200 shadow-xl rounded-lg max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl font-semibold">
-            <SettingsIcon className="h-6 w-6 text-blue-600" /> Configuración
+      <DialogContent className="bg-white/95 backdrop-blur-md border border-gray-200 shadow-xl rounded-lg max-w-md" closeButton={false}>
+        <DialogHeader className="border-b pb-2">
+          <DialogTitle className="flex items-center justify-between w-full">
+            <span className="text-xl font-semibold">Settings</span>
+            <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full p-1 hover:bg-gray-100">
+              <X className="h-4 w-4" />
+            </Button>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col space-y-6 p-2">
-          {/* Timer Colors */}
-          <div>
-            <Label className="block font-semibold mb-4 flex items-center gap-2 text-gray-800">
-              <Palette className="h-5 w-5 text-blue-500" /> Colores del
-              Temporizador
-            </Label>
-            <div className="flex justify-center space-x-8">
-              <div title="Pomodoro Timer Color">
-                <div>
-                  <Label className="text-sm font-medium text-gray-600 mb-2 block text-center">
-                    Pomodoro
-                  </Label>
-                  <Input
-                    type="color"
-                    value={localSettings.pomodoroColor}
-                    onChange={(e) =>
-                      setLocalSettings({
-                        ...localSettings,
-                        pomodoroColor: e.target.value,
-                      })
-                    }
-                    className="w-14 h-14 rounded-lg cursor-pointer p-1 border-2 border-gray-200 hover:border-blue-400 transition-colors"
-                  />
-                </div>
-              </div>
-
-              <div title="Short Break Timer Color">
-                <div>
-                  <Label className="text-sm font-medium text-gray-600 mb-2 block text-center">
-                    Descanso Corto
-                  </Label>
-                  <Input
-                    type="color"
-                    value={localSettings.shortBreakColor}
-                    onChange={(e) =>
-                      setLocalSettings({
-                        ...localSettings,
-                        shortBreakColor: e.target.value,
-                      })
-                    }
-                    className="w-14 h-14 rounded-lg cursor-pointer p-1 border-2 border-gray-200 hover:border-blue-400 transition-colors"
-                  />
-                </div>
-              </div>
-
-              <div title="Long Break Timer Color">
-                <div>
-                  <Label className="text-sm font-medium text-gray-600 mb-2 block text-center">
-                    Descanso Largo
-                  </Label>
-                  <Input
-                    type="color"
-                    value={localSettings.longBreakColor}
-                    onChange={(e) =>
-                      setLocalSettings({
-                        ...localSettings,
-                        longBreakColor: e.target.value,
-                      })
-                    }
-                    className="w-14 h-14 rounded-lg cursor-pointer p-1 border-2 border-gray-200 hover:border-blue-400 transition-colors"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <hr className="my-4 border-gray-200" />
-
+        <div className="flex flex-col space-y-6 p-4">
           {/* Timer Durations */}
           <div>
             <Label className="block font-semibold mb-4 flex items-center gap-2 text-gray-800">
               <Clock className="h-5 w-5 text-blue-500" /> Tiempo (minutos)
             </Label>
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-3 gap-4">
               <div title="Set Pomodoro Duration">
-                <div>
-                  <Label className="block text-sm font-medium text-gray-600 mb-2">
-                    Pomodoro
-                  </Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="60"
-                    value={localSettings.times.pomodoro}
-                    onChange={(e) => {
-                      const value = Math.max(
-                        1,
-                        Math.min(60, Number(e.target.value))
-                      );
-                      setLocalSettings({
-                        ...localSettings,
-                        times: {
-                          ...localSettings.times,
-                          pomodoro: value,
-                        },
-                      });
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+                <Input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={localSettings.times.pomodoro}
+                  onChange={(e) => {
+                    const value = Math.max(
+                      1,
+                      Math.min(60, Number(e.target.value))
+                    );
+                    setLocalSettings({
+                      ...localSettings,
+                      times: {
+                        ...localSettings.times,
+                        pomodoro: value,
+                      },
+                    });
+                  }}
+                  className="w-full"
+                />
               </div>
 
               <div title="Set Short Break Duration">
-                <div>
-                  <Label className="block text-sm font-medium text-gray-600 mb-2">
-                    Descanso Corto
-                  </Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="60"
-                    value={localSettings.times.shortBreak}
-                    onChange={(e) => {
-                      const value = Math.max(
-                        1,
-                        Math.min(60, Number(e.target.value))
-                      );
-                      setLocalSettings({
-                        ...localSettings,
-                        times: {
-                          ...localSettings.times,
-                          shortBreak: value,
-                        },
-                      });
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+                <Input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={localSettings.times.shortBreak}
+                  onChange={(e) => {
+                    const value = Math.max(
+                      1,
+                      Math.min(60, Number(e.target.value))
+                    );
+                    setLocalSettings({
+                      ...localSettings,
+                      times: {
+                        ...localSettings.times,
+                        shortBreak: value,
+                      },
+                    });
+                  }}
+                  className="w-full"
+                />
               </div>
 
               <div title="Set Long Break Duration">
-                <div>
-                  <Label className="block text-sm font-medium text-gray-600 mb-2">
-                    Descanso Largo
-                  </Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="60"
-                    value={localSettings.times.longBreak}
-                    onChange={(e) => {
-                      const value = Math.max(
-                        1,
-                        Math.min(60, Number(e.target.value))
-                      );
-                      setLocalSettings({
-                        ...localSettings,
-                        times: {
-                          ...localSettings.times,
-                          longBreak: value,
-                        },
-                      });
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <Label
-                  htmlFor="autostart-breaks"
-                  className="text-sm font-medium"
-                >
-                  Iniciar descansos automáticamente
-                </Label>
-                <Switch
-                  id="autostart-breaks"
-                  checked={localSettings.autoStartBreaks || false}
-                  onCheckedChange={(checked) => {
+                <Input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={localSettings.times.longBreak}
+                  onChange={(e) => {
+                    const value = Math.max(
+                      1,
+                      Math.min(60, Number(e.target.value))
+                    );
                     setLocalSettings({
                       ...localSettings,
-                      autoStartBreaks: checked,
+                      times: {
+                        ...localSettings.times,
+                        longBreak: value,
+                      },
                     });
                   }}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label
-                  htmlFor="auto-delete-tasks"
-                  className="text-sm font-medium flex items-center gap-2"
-                >
-                  <Trash2 className="h-4 w-4 text-red-500" /> Eliminar tareas al
-                  completar
-                </Label>
-                <Switch
-                  id="auto-delete-tasks"
-                  checked={localSettings.autoDeleteCompletedTasks || false}
-                  onCheckedChange={(checked) => {
-                    setLocalSettings({
-                      ...localSettings,
-                      autoDeleteCompletedTasks: checked,
-                    });
-                  }}
+                  className="w-full"
                 />
               </div>
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium mb-2">Tema</h3>
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Tema de color</h4>
-                <div className="flex gap-2">
-                  {themes.map((theme) => (
-                    <button
-                      key={theme.id}
-                      className={cn(
-                        'h-8 w-8 rounded-md border border-input',
-                        localSettings.globalTheme === theme.id &&
-                          'ring-2 ring-ring ring-offset-2'
+          <div className="flex items-center justify-between py-2">
+            <Label htmlFor="autostart-breaks" className="text-sm font-medium">
+              Iniciar descansos automáticamente
+            </Label>
+            <Switch
+              id="autostart-breaks"
+              checked={localSettings.autoStartBreaks ?? false}
+              onCheckedChange={(checked) => {
+                setLocalSettings({
+                  ...localSettings,
+                  autoStartBreaks: checked,
+                });
+              }}
+            />
+          </div>
+
+          <div>
+            <Label className="block font-semibold mb-4 text-gray-800">
+              Theme
+            </Label>
+            <div className="space-y-4">
+              <Label className="block text-sm font-medium text-gray-600 mb-2">
+                Color theme
+              </Label>
+              <div className="grid grid-cols-3 gap-4">
+                {[ 
+                  { key: 'pomodoro', name: 'Pomodoro', color: localSettings.pomodoroColor, setColor: (color: string) => setLocalSettings({...localSettings, pomodoroColor: color}) },
+                  { key: 'shortBreak', name: 'Descanso Corto', color: localSettings.shortBreakColor, setColor: (color: string) => setLocalSettings({...localSettings, shortBreakColor: color}) },
+                  { key: 'longBreak', name: 'Descanso Largo', color: localSettings.longBreakColor, setColor: (color: string) => setLocalSettings({...localSettings, longBreakColor: color}) },
+                ].map(item => (
+                  <div key={item.key} className="flex flex-col items-center gap-2">
+                    <span className="text-xs text-gray-600">{item.name}</span>
+                    <div className="relative">
+                      <button
+                        className="h-10 w-10 rounded-md border border-input"
+                        style={{ backgroundColor: item.color }}
+                        onClick={() => setEditingColor(editingColor === item.key ? null : item.key)}
+                        aria-label={`${item.name} color`}
+                      />
+                      {editingColor === item.key && (
+                        <div className="absolute top-12 left-1/2 -translate-x-1/2 z-10 bg-white p-2 rounded-md shadow-lg border w-32">
+                          <input
+                            type="color"
+                            value={item.color}
+                            onChange={(e) => {
+                              item.setColor(e.target.value);
+                            }}
+                            onBlur={() => setEditingColor(null)}
+                            className="w-full h-8 cursor-pointer"
+                          />
+                        </div>
                       )}
-                      onClick={() =>
-                        setLocalSettings({
-                          ...localSettings,
-                          globalTheme: theme.id,
-                        })
-                      }
-                      aria-label={theme.name}
-                    ></button>
-                  ))}
-                </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end space-x-3 mt-8">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100"
-          >
-            Cancelar
-          </Button>
+        <div className="flex justify-end space-x-3 mt-4 pt-4 border-t">
           <Button
             onClick={handleSave}
             className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2"

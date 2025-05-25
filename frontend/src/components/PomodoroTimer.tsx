@@ -24,6 +24,7 @@ export default function PomodoroTimer({
   onModeChange,
   onTimeUpdate,
 }: PomodoroTimerProps) {
+  const { settings: contextSettings, updateSettings } = useSettings();
   const [timeLeft, setTimeLeft] = useState(() => {
     return (
       (settings?.times?.[currentMode] ??
@@ -42,7 +43,6 @@ export default function PomodoroTimer({
   });
   const [newTask, setNewTask] = useState('');
   const [autoDeleteCompleted, setAutoDeleteCompleted] = useState(false);
-  const { updateSettings, settings: fullSettings } = useSettings();
   const taskRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   // Reproducir sonido
@@ -114,18 +114,26 @@ export default function PomodoroTimer({
                 }
               });
             }
-            setIsRunning(false);
             playSound('/sounds/pomodoro.mp3', 0.5); // Sonido al finalizar el temporizador
+            if (contextSettings.autoStartBreaks) {
+              const nextMode = currentMode === 'pomodoro' ? 'shortBreak' : 'pomodoro';
+              onModeChange(nextMode);
+              setTimeLeft(settings.times[nextMode] * 60);
+              setIsRunning(true); // Iniciar automáticamente el siguiente temporizador
+            } else {
+              setIsRunning(false);
+            }
           }
           return time - 1;
         });
       }, 1000);
     }
     return () => clearInterval(intervalId);
-  }, [isRunning, timeLeft, currentMode]);
+  }, [isRunning, timeLeft, currentMode, contextSettings.autoStartBreaks, onModeChange, settings]);
 
   const toggleTimer = () => {
-    if (timeLeft === 0) {
+    if (timeLeft === 0 && !contextSettings.autoStartBreaks) {
+      // Si el tiempo es 0 y autoStartBreaks es falso, reiniciar el temporizador actual
       setTimeLeft(
         (settings?.times?.[currentMode] ??
           (currentMode === 'pomodoro'
@@ -134,11 +142,14 @@ export default function PomodoroTimer({
             ? 5
             : 15)) * 60
       );
-    }
-    setIsRunning(!isRunning);
-    if (!isRunning) {
-      playSound('/sounds/click.mp3', 0.1); // Sonido al iniciar
+      setIsRunning(false); // Asegurarse de que no se inicie automáticamente
     } else {
+      setIsRunning(!isRunning);
+    }
+
+    if (!isRunning && !(timeLeft === 0 && contextSettings.autoStartBreaks)) {
+      playSound('/sounds/click.mp3', 0.1); // Sonido al iniciar o reanudar
+    } else if (isRunning) {
       playSound('/sounds/click.mp3', 0.1); // Sonido al pausar
     }
   };
@@ -166,7 +177,7 @@ export default function PomodoroTimer({
           if (
             newCompleted &&
             autoDeleteCompleted &&
-            fullSettings?.autoDeleteCompletedTasks
+            contextSettings?.autoDeleteCompletedTasks
           ) {
             return null; // Marcar para eliminación
           }
@@ -177,7 +188,7 @@ export default function PomodoroTimer({
             setTimeout(() => {
               if (
                 autoDeleteCompleted &&
-                fullSettings?.autoDeleteCompletedTasks
+                contextSettings?.autoDeleteCompletedTasks
               ) {
                 // La tarea ya se eliminará
               } else {
@@ -220,10 +231,10 @@ export default function PomodoroTimer({
 
   // Efecto para sincronizar autoDeleteCompleted con la configuración
   useEffect(() => {
-    if (fullSettings?.autoDeleteCompletedTasks !== undefined) {
-      setAutoDeleteCompleted(fullSettings.autoDeleteCompletedTasks);
+    if (contextSettings?.autoDeleteCompletedTasks !== undefined) {
+      setAutoDeleteCompleted(contextSettings.autoDeleteCompletedTasks);
     }
-  }, [fullSettings]);
+  }, [contextSettings]);
 
   // Guardar tareas en localStorage cuando cambien
   useEffect(() => {

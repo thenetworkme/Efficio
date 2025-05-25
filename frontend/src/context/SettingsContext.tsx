@@ -54,17 +54,64 @@ const SettingsContext = createContext<SettingsContextType | undefined>(
 );
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const [settings, setSettings] = useState<Settings>(() => {
+    const savedSettings = localStorage.getItem('userSettings');
+    if (savedSettings) {
+      try {
+        return JSON.parse(savedSettings);
+      } catch (error) {
+        console.error('Error parsing saved settings from localStorage:', error);
+        return defaultSettings;
+      }
+    } 
+    return defaultSettings;
+  });
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
   useEffect(() => {
-    if (user) {
-      loadSettings();
-    } else {
-      setSettings(defaultSettings);
+    const loadInitialSettings = async () => {
+      setLoading(true);
+      const savedSettings = localStorage.getItem('userSettings');
+      let localSettingsToApply = defaultSettings;
+      if (savedSettings) {
+        try {
+          localSettingsToApply = { ...defaultSettings, ...JSON.parse(savedSettings) };
+        } catch (error) {
+          console.error('Error parsing saved settings from localStorage:', error);
+        }
+      }
+
+      if (user) {
+        try {
+          const apiSettings = await api.getSettings();
+          // Merge API settings with local, API takes precedence for authenticated users
+          const mergedSettings = {
+            ...localSettingsToApply, // Start with local or default
+            id: apiSettings.id,
+            user_id: user.id, // Ensure user_id is set from auth
+            globalTheme: apiSettings.global_theme,
+            pomodoroColor: apiSettings.pomodoro_color,
+            shortBreakColor: apiSettings.short_break_color,
+            longBreakColor: apiSettings.long_break_color,
+            times: apiSettings.times,
+            sessions: apiSettings.sessions || [],
+            autoStartBreaks: apiSettings.auto_start_breaks ?? false,
+            autoDeleteCompletedTasks: apiSettings.auto_delete_completed_tasks ?? false,
+          };
+          setSettings(mergedSettings);
+          localStorage.setItem('userSettings', JSON.stringify(mergedSettings)); // Update local storage with merged settings
+        } catch (error) {
+          console.error('Error loading settings from API, using local/default:', error);
+          setSettings(localSettingsToApply); // Fallback to local/default if API fails
+        }
+      } else {
+        setSettings(localSettingsToApply); // For non-authenticated users, apply local/default
+      }
       setLoading(false);
-    }
+    };
+
+    loadInitialSettings();
   }, [user]);
 
   const loadSettings = async () => {
@@ -93,29 +140,30 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const updateSettings = async (newSettings: Partial<Settings>) => {
     try {
       setLoading(true);
-      const updatedSettings = {
-        global_theme: newSettings.globalTheme || settings.globalTheme,
-        pomodoro_color: newSettings.pomodoroColor || settings.pomodoroColor,
-        short_break_color:
-          newSettings.shortBreakColor || settings.shortBreakColor,
-        long_break_color: newSettings.longBreakColor || settings.longBreakColor,
-        times: newSettings.times || settings.times,
-        sessions: newSettings.sessions || settings.sessions,
-        auto_start_breaks:
-          newSettings.autoStartBreaks !== undefined
-            ? newSettings.autoStartBreaks
-            : settings.autoStartBreaks,
-        auto_delete_completed_tasks:
-          newSettings.autoDeleteCompletedTasks !== undefined
-            ? newSettings.autoDeleteCompletedTasks
-            : settings.autoDeleteCompletedTasks,
+      const settingsToSave = { ...settings, ...newSettings };
+      
+      // Prepare settings for API (snake_case)
+      const apiFormattedSettings = {
+        global_theme: settingsToSave.globalTheme,
+        pomodoro_color: settingsToSave.pomodoroColor,
+        short_break_color: settingsToSave.shortBreakColor,
+        long_break_color: settingsToSave.longBreakColor,
+        times: settingsToSave.times,
+        sessions: settingsToSave.sessions,
+        auto_start_breaks: settingsToSave.autoStartBreaks,
+        auto_delete_completed_tasks: settingsToSave.autoDeleteCompletedTasks,
       };
+
       if (user) {
-        await api.updateSettings(updatedSettings);
+        await api.updateSettings(apiFormattedSettings);
       }
-      setSettings((prev) => ({ ...prev, ...newSettings }));
+      // Update local state and localStorage
+      setSettings(settingsToSave);
+      localStorage.setItem('userSettings', JSON.stringify(settingsToSave));
     } catch (error) {
       console.error('Error updating settings:', error);
+      // Optionally, revert local state if API call fails and user is logged in
+      // if (user) setSettings(settings); // Revert to previous settings
       throw error;
     } finally {
       setLoading(false);
