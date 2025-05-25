@@ -114,7 +114,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     loadInitialSettings();
   }, [user]);
 
-  const loadSettings = async () => {
+  // Función para cargar configuraciones desde la API y localStorage
+  // Esta función se usa internamente en el useEffect
+  const loadSettingsInternal = async () => {
     try {
       const data = await api.getSettings();
       setSettings({
@@ -136,6 +138,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
   };
+
+  // La carga inicial ya se maneja en el primer useEffect con loadInitialSettings
 
   const updateSettings = async (newSettings: Partial<Settings>) => {
     try {

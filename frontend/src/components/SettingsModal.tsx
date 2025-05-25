@@ -16,12 +16,7 @@ import {
   SelectValue,
 } from './ui/select';
 import {
-  Paintbrush,
-  Palette,
-  Timer,
   CheckCircle,
-  Settings as SettingsIcon,
-  Trash2,
   X,
   Clock,
 } from 'lucide-react';
@@ -30,7 +25,6 @@ import { useAuth } from '../context/AuthContext';
 import { useEffect, useState } from 'react';
 import type { Settings } from '../context/SettingsContext';
 import { toast } from 'sonner';
-import { cn } from '../lib/utils';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -39,15 +33,11 @@ interface SettingsModalProps {
 
 // No necesitamos ExtendedSettings ya que autoDeleteCompletedTasks está en Settings
 
-const themes = [
-  { id: 'light', name: 'Claro' },
-  { id: 'dark', name: 'Oscuro' },
-  { id: 'system', name: 'Sistema' },
-];
+
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { settings, updateSettings, loading: settingsLoading } = useSettings();
-  const { user } = useAuth();
+  const { } = useAuth(); // Mantenemos la importación pero no usamos user
   const [localSettings, setLocalSettings] = useState<Settings>(settings);
   const [editingColor, setEditingColor] = useState<string | null>(null);
 

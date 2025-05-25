@@ -90,28 +90,27 @@ export default function PomodoroTimer({
 
               // Registrar la sesión completada
               const today = new Date().toISOString().split('T')[0];
-              updateSettings((prevSettings) => {
-                const existingSession = prevSettings.sessions.find(
-                  (session) => session.date === today
+              const existingSession = contextSettings.sessions.find(
+                (session) => session.date === today
+              );
+              
+              let updatedSessions;
+              if (existingSession) {
+                updatedSessions = contextSettings.sessions.map((session) =>
+                  session.date === today
+                    ? { ...session, count: session.count + 1 }
+                    : session
                 );
-                if (existingSession) {
-                  return {
-                    ...prevSettings,
-                    sessions: prevSettings.sessions.map((session) =>
-                      session.date === today
-                        ? { ...session, count: session.count + 1 }
-                        : session
-                    ),
-                  };
-                } else {
-                  return {
-                    ...prevSettings,
-                    sessions: [
-                      ...prevSettings.sessions,
-                      { date: today, count: 1 },
-                    ],
-                  };
-                }
+              } else {
+                updatedSessions = [
+                  
+                  ...contextSettings.sessions,
+                  { date: today, count: 1 },
+                ];
+              }
+              
+              updateSettings({
+                sessions: updatedSessions
               });
             }
             playSound('/sounds/pomodoro.mp3', 0.5); // Sonido al finalizar el temporizador
@@ -260,7 +259,7 @@ export default function PomodoroTimer({
 
   return (
     <div className="flex flex-col space-y-4">
-      <style jsx global>{`
+      <style>{`
         .task-completed-animation {
           transform: scale(0.95);
           opacity: 0.7;
@@ -349,7 +348,9 @@ export default function PomodoroTimer({
           {tasks.map((task) => (
             <div
               key={task.id}
-              ref={(el) => (taskRefs.current[task.id] = el)}
+              ref={(el) => {
+                taskRefs.current[task.id] = el;
+              }}
               className="flex items-center justify-between gap-3 bg-white/10 p-4 rounded-lg group transition-all duration-300"
             >
               <span
