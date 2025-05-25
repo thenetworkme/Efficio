@@ -219,14 +219,14 @@ export default function PomodoroTimer({
   };
 
   // Calcular el porcentaje de tiempo transcurrido
-  const totalTime =
-    (settings?.times?.[currentMode] ??
-      (currentMode === 'pomodoro'
-        ? 25
-        : currentMode === 'shortBreak'
-        ? 5
-        : 15)) * 60;
-  const progressPercentage = ((totalTime - timeLeft) / totalTime) * 100;
+  // const totalTime =
+  //   (settings?.times?.[currentMode] ??
+  //     (currentMode === 'pomodoro'
+  //       ? 25
+  //       : currentMode === 'shortBreak'
+  //       ? 5
+  //       : 15)) * 60;
+ // const progressPercentage = ((totalTime - timeLeft) / totalTime) * 100;
 
   // Efecto para sincronizar autoDeleteCompleted con la configuración
   useEffect(() => {
@@ -348,7 +348,7 @@ export default function PomodoroTimer({
           {tasks.map((task) => (
             <div
               key={task.id}
-              ref={(el) => {
+              ref={(el: HTMLDivElement | null): void => {
                 taskRefs.current[task.id] = el;
               }}
               className="flex items-center justify-between gap-3 bg-white/10 p-4 rounded-lg group transition-all duration-300"

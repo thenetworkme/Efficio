@@ -116,28 +116,28 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   // Función para cargar configuraciones desde la API y localStorage
   // Esta función se usa internamente en el useEffect
-  const loadSettingsInternal = async () => {
-    try {
-      const data = await api.getSettings();
-      setSettings({
-        id: data.id,
-        user_id: '',
-        globalTheme: data.global_theme,
-        pomodoroColor: data.pomodoro_color,
-        shortBreakColor: data.short_break_color,
-        longBreakColor: data.long_break_color,
-        times: data.times,
-        sessions: data.sessions || [],
-        autoStartBreaks: data.auto_start_breaks || false,
-        autoDeleteCompletedTasks: data.auto_delete_completed_tasks || false,
-      });
-    } catch (error) {
-      console.error('Error loading settings:', error);
-      setSettings(defaultSettings);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const loadSettingsInternal = async () => {
+  //   try {
+  //     const data = await api.getSettings();
+  //     setSettings({
+  //       id: data.id,
+  //       user_id: '',
+  //       globalTheme: data.global_theme,
+  //       pomodoroColor: data.pomodoro_color,
+  //       shortBreakColor: data.short_break_color,
+  //       longBreakColor: data.long_break_color,
+  //       times: data.times,
+  //       sessions: data.sessions || [],
+  //       autoStartBreaks: data.auto_start_breaks || false,
+  //       autoDeleteCompletedTasks: data.auto_delete_completed_tasks || false,
+  //     });
+  //   } catch (error) {
+  //     console.error('Error loading settings:', error);
+  //     setSettings(defaultSettings);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   // La carga inicial ya se maneja en el primer useEffect con loadInitialSettings
 
